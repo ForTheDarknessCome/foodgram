@@ -16,7 +16,7 @@ class User(AbstractUser):
 
 
 class Avatar(models.Model):
-    photo = models.ImageField(
+    avatar = models.ImageField(
         upload_to='users/',
         null=True,
         default=None
@@ -27,7 +27,7 @@ class Avatar(models.Model):
     )
 
     def get_photo_url(self):
-        return self.photo.url if self.photo else None
+        return self.avatar.url if self.avatar else None
 
 
 class Follow(models.Model):

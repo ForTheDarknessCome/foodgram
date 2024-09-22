@@ -13,6 +13,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==4.7.2
 djoser==2.1.0
 drf-yasg==1.21.7
+fpdf==1.7.2
 idna==3.8
 inflection==0.5.1
 itypes==1.2.0

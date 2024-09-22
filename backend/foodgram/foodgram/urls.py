@@ -3,7 +3,7 @@ from django.urls import path, include, re_path
 from drf_yasg import openapi
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
-
+from cooking.views import RecipeGetFullLinkView
 
 api_patterns = [
     # path('users/', include('account.urls')),
@@ -15,6 +15,7 @@ api_patterns = [
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(api_patterns)),
+    re_path(r'^s/([a-f0-9]{3})/$', RecipeGetFullLinkView.as_view(), name='full-link'),
 ]
 
 schema_view = get_schema_view(

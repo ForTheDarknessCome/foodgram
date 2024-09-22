@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-j2&p@l8paf56xf2wl4@azq%okh9j-04ef@*6z#x88dz9s%ua%o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rest_framework_simplejwt',
     'drf_yasg',
     'djoser',
@@ -124,12 +125,14 @@ AUTH_USER_MODEL = 'account.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6,
 }
 
 
@@ -138,14 +141,16 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-DJOSER = {
-    'SERIALIZERS': {
-        'user_create': 'account.serializers.ExtendedUserCreateSerializer',
-        'user': 'account.serializers.ExtendedUserSerializer',
-    },
-    # 'VIEW_SETS': {
-    #     'user': 'account.ExtendedUserViewSet',
-    # }
-}
+# DJOSER = {
+#     'SERIALIZERS': {
+#         'user_create': 'account.serializers.ExtendedUserCreateSerializer',
+#         'user': 'account.serializers.ExtendedUserSerializer',
+#     },
+#     # 'PERMISSIONS': {
+#     #     'user': 'utils.permissions.CurrentUserAdminOrReadOnly',
+#     #     # 'user_list': 'rest_framework.permissions.AllowAny',
+#     # },
+#     'HIDE_USERS': False,
+# }
 
 AUTHENTICATION_BACKENDS = ('account.backends.EmailBackend',)

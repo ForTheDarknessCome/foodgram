@@ -2,16 +2,18 @@ from django.urls import re_path, path, include
 from rest_framework_simplejwt import views
 from rest_framework.routers import DefaultRouter
 
-from account.views import SignoutView, SigninView, ExtendedUserViewSet, UserAvatarView
+from account.views import SignoutView, SigninView, UserViewSet, UserAvatarView, FollowersList, FollowView
 
 router = DefaultRouter()
 
 
-router.register('', ExtendedUserViewSet, basename='user')
+router.register('', UserViewSet, basename='user')
 
 account_patterns = [
-    path('', include(router.urls)),
     path('me/avatar/', UserAvatarView.as_view(), name='user-avatar'),
+    path('subscriptions/', FollowersList.as_view(), name='followers-list'),
+    path('<int:following_id>/subscribe/', FollowView.as_view(), name='follow'),
+    path('', include(router.urls)),
 ]
 
 auth_patterns = [
