@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
 
+from cooking.models import Recipe
 from account.models import Avatar, Follow
 from utils.fields import Base64ImageField
 
@@ -11,12 +12,12 @@ User = get_user_model()
 
 
 class ExtendedUserCreateSerializer(UserCreateSerializer):
-    first_name = serializers.CharField(required=True)
-    last_name = serializers.CharField(required=True)
-    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField(required=True, max_length=150)
+    last_name = serializers.CharField(required=True, max_length=150)
+    email = serializers.EmailField(required=True, max_length=254)
 
     class Meta(UserCreateSerializer.Meta):
-        fields = UserCreateSerializer.Meta.fields + ('first_name', 'last_name', 'email')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
 
     def validate_email(self, value):
         """ Проверка уникальности email. """
@@ -79,6 +80,13 @@ class UserSerializer(serializers.ModelSerializer):
         return False
 
 
+class RecipeDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
 class FollowersSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='following.email')
     id = serializers.IntegerField(source='following.id')
@@ -87,10 +95,12 @@ class FollowersSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='following.last_name')
     avatar = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Follow
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'avatar', 'is_subscribed')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar',)
 
     def get_avatar(self, obj):
         following_user = obj.following
@@ -102,9 +112,22 @@ class FollowersSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return Follow.objects.filter(user=user, following=obj.following).exists()
 
+    def get_recipes(self, obj):
+        following_user = obj.following
+        recipes_limit = self.context.get('recipes_limit')
+
+        recipes = Recipe.objects.filter(author=following_user)
+        if recipes_limit is not None:
+            recipes = recipes[:int(recipes_limit)]
+
+        return RecipeDetailSerializer(recipes, many=True).data
+
+    def get_recipes_count(self, obj):
+        following_user = obj.following
+        return Recipe.objects.filter(author=following_user).count()
+
 
 class FollowSerializer(serializers.ModelSerializer):
-
     user = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -137,6 +160,12 @@ class FollowSerializer(serializers.ModelSerializer):
         return data
 
     def to_internal_value(self, data):
-        if 'following' not in data and 'following' in self.context:
-            data['following'] = self.context['following'].username
+        data['following'] = self.context['following'].username
         return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        context = {
+            'request': self.context.get('request'),
+            'recipes_limit': self.context.get('recipes_limit')
+        }
+        return FollowersSerializer(instance, context=context).data

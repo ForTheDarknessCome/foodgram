@@ -11,7 +11,9 @@ from djoser.serializers import SetPasswordSerializer
 
 from account.serializers import SigninSerializer, UserSerializer, AvatarSerializer, FollowSerializer, FollowersSerializer, ExtendedUserCreateSerializer
 from account.models import Avatar, Follow
+from cooking.models import Recipe
 from utils.permissions import CurrentUserAdminOrReadOnly
+from utils.pagination import CustomLimitOffsetPagination
 
 
 User = get_user_model()
@@ -41,8 +43,7 @@ class SigninView(APIView):
         """ Генерирует токены для пользователя. """
         refresh = RefreshToken.for_user(user)
         return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'auth_token': str(refresh.access_token),
         }
 
 
@@ -51,6 +52,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (CurrentUserAdminOrReadOnly,)
     http_method_names = ['get', 'post']
+    pagination_class = CustomLimitOffsetPagination
 
     def get_permissions(self):
         if self.action == 'create':
@@ -94,7 +96,9 @@ class UserAvatarView(APIView):
         avatar.avatar = serializer.validated_data['avatar']
         avatar.save()
 
-        return Response({'status': 'Аватар обновлен'}, status=status.HTTP_200_OK)
+        avatar_url = avatar.get_photo_url()
+
+        return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         user = request.user
@@ -106,10 +110,17 @@ class UserAvatarView(APIView):
 class FollowersList(generics.ListAPIView):
     queryset = Follow.objects.all()
     serializer_class = FollowersSerializer
+    pagination_class = CustomLimitOffsetPagination
 
     def get_queryset(self):
         user = self.request.user
-        return Follow.objects.filter(following=user)
+        return Follow.objects.filter(user=user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        recipes_limit = self.request.query_params.get('recipes_limit', None)
+        context['recipes_limit'] = recipes_limit
+        return context
 
 
 class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
@@ -122,7 +133,9 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        recipes_limit = self.request.query_params.get('recipes_limit', None)
         context['following'] = self.get_following_user()
+        context['recipes_limit'] = recipes_limit
         return context
 
     def perform_create(self, serializer):
@@ -133,4 +146,8 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
     def get_object(self):
         """Находит существующую подписку для удаления."""
         following_user = self.get_following_user()
-        return get_object_or_404(Follow, user=self.request.user, following=following_user)
+        try:
+            return Follow.objects.get(user=self.request.user, following=following_user)
+        except Follow.DoesNotExist:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Вы не подписаны на пользователя")

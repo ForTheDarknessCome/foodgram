@@ -4,6 +4,8 @@ from drf_yasg import openapi
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from cooking.views import RecipeGetFullLinkView
+from django.conf import settings
+from django.conf.urls.static import static
 
 api_patterns = [
     # path('users/', include('account.urls')),
@@ -16,7 +18,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(api_patterns)),
     re_path(r'^s/([a-f0-9]{3})/$', RecipeGetFullLinkView.as_view(), name='full-link'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 schema_view = get_schema_view(
     openapi.Info(

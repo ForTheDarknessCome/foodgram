@@ -17,6 +17,7 @@ class User(AbstractUser):
 
 class Avatar(models.Model):
     avatar = models.ImageField(
+        'Аватар',
         upload_to='users/',
         null=True,
         default=None
@@ -29,14 +30,35 @@ class Avatar(models.Model):
     def get_photo_url(self):
         return self.avatar.url if self.avatar else None
 
+    class Meta:
+        verbose_name = 'Аватар'
+        verbose_name_plural = 'Аватарки'
+
+    def __str__(self):
+        return f'Пользователь {self.user}: аватар {self.get_photo_url()}'
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
         User,
-        related_name='following', on_delete=models.CASCADE
+        related_name='following', on_delete=models.CASCADE,
+        verbose_name='Автор'
     )
 
     following = models.ForeignKey(
         User,
-        related_name='followers', on_delete=models.CASCADE
+        related_name='followers', on_delete=models.CASCADE,
+        verbose_name='Подписчик'
     )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_follower')
+        ]
+
+    def __str__(self):
+        return f'Автор: {self.following}, подписчик: {self.user}'
