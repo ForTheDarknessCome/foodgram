@@ -1,9 +1,14 @@
-from rest_framework import serializers
-from cooking.models import Recipe, Tag, Ingredient, RecipeIngredient, Favorite, ShoppingCart
-from utils.fields import Base64ImageField
-from rest_framework.exceptions import ValidationError
 from django.db import transaction
+
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
 from account.serializers import UserSerializer
+from cooking.models import (
+    Favorite, Ingredient, Recipe, RecipeIngredient,
+    ShoppingCart, Tag
+)
+from utils.fields import Base64ImageField
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -14,6 +19,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """ Сериализатор для получения полей тегов. """
 
     class Meta:
         model = Tag
@@ -35,6 +41,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
+    """ Сериализатор для добавления существующих ингредиентов
+    в рецепт и указания количества.
+    Используется для определения поля ingredients в RecipeSerializer. """
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient')
@@ -45,6 +54,7 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
+    """ Сериализатор для создания рецептов. """
     image = Base64ImageField(required=True, allow_null=True)
     ingredients = AddIngredientSerializer(many=True, required=True)
 
@@ -57,21 +67,29 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         ingredients = data.get('ingredients', [])
         if not ingredients:
-            raise serializers.ValidationError({'ingredients': 'Поле ингредиентов не может быть пустым.'})
+            raise serializers.ValidationError(
+                {'ingredients': 'Поле ингредиентов не может быть пустым.'}
+            )
 
         ingredients_list = [item['ingredient'] for item in data['ingredients']]
-        all_ingredients, distinct_ingredients = len(ingredients_list), len(set(ingredients_list))
-
+        all_ingredients = len(ingredients_list)
+        distinct_ingredients = len(set(ingredients_list))
         if all_ingredients != distinct_ingredients:
-            raise ValidationError({'error': 'Ингредиенты должны быть уникальными'})
+            raise ValidationError(
+                {'error': 'Ингредиенты должны быть уникальными'}
+            )
 
         tags = data.get('tags', [])
         if not tags:
-            raise serializers.ValidationError({'tags': 'Поле тегов не может быть пустым.'})
+            raise serializers.ValidationError(
+                {'tags': 'Поле тегов не может быть пустым.'}
+            )
 
         all_tags, distinct_tags = len(tags), len(set(tags))
         if all_tags != distinct_tags:
-            raise serializers.ValidationError({'error': 'Теги должны быть уникальными'})
+            raise serializers.ValidationError(
+                {'error': 'Теги должны быть уникальными'}
+            )
         return data
 
     def get_ingredients(self, recipe, ingredients):
@@ -113,6 +131,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
+    """ Сериализатор для отображения краткой информации о рецепте. """
 
     class Meta:
         model = Recipe

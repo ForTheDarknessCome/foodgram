@@ -1,13 +1,12 @@
-# from django.contrib.auth import get_user_model
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from django.db import models
-
-
-# User = get_user_model()
 
 
 class User(AbstractUser):
+    """Модель пользователя, расширяющая стандартную модель AbstractUser.
+    Добавляет поле email с уникальным значением.
+    """
     email = models.EmailField(_('email address'), unique=True)
 
     class Meta:
@@ -16,6 +15,7 @@ class User(AbstractUser):
 
 
 class Avatar(models.Model):
+    """Модель для хранения аватара пользователя."""
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/',
@@ -28,6 +28,7 @@ class Avatar(models.Model):
     )
 
     def get_photo_url(self):
+        """Возвращает URL аватара, если он существует."""
         return self.avatar.url if self.avatar else None
 
     class Meta:
@@ -39,6 +40,9 @@ class Avatar(models.Model):
 
 
 class Follow(models.Model):
+    """Модель для хранения подписок пользователей.
+    Позволяет отслеживать, кто на кого подписан.
+    """
     user = models.ForeignKey(
         User,
         related_name='following', on_delete=models.CASCADE,

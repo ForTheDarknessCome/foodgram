@@ -1,28 +1,32 @@
-from djoser.serializers import UserCreateSerializer
-from django.contrib.auth import get_user_model, authenticate
-from rest_framework import serializers
+from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
-from cooking.models import Recipe
+from djoser.serializers import UserCreateSerializer
+from rest_framework import serializers
+
 from account.models import Avatar, Follow
+from cooking.models import Recipe
 from utils.fields import Base64ImageField
 
 User = get_user_model()
 
 
 class ExtendedUserCreateSerializer(UserCreateSerializer):
+    """ Расширенный сериализатор для создания пользователя. """
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
     email = serializers.EmailField(required=True, max_length=254)
 
     class Meta(UserCreateSerializer.Meta):
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'password')
 
     def validate_email(self, value):
         """ Проверка уникальности email. """
         if User.objects.filter(email=value).exists():
-            raise ValidationError('Этот email уже занят. Пожалуйста, используйте другой.')
+            raise ValidationError(
+                'Email занят. Пожалуйста, используйте другой.'
+            )
         return value
 
     def create(self, validated_data):
@@ -35,6 +39,7 @@ class ExtendedUserCreateSerializer(UserCreateSerializer):
 
 
 class SigninSerializer(serializers.Serializer):
+    """ Сериализатор для аутентификации по имэйлу и паролю. """
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
@@ -52,6 +57,7 @@ class SigninSerializer(serializers.Serializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
+    """ Сериализатор для поля аватар. """
     avatar = Base64ImageField(required=True)
 
     class Meta:
@@ -60,12 +66,14 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """ Сериализатор для работы с пользователями. """
     is_subscribed = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'avatar')
+        fields = ('email', 'id', 'username', 'first_name',
+                  'last_name', 'is_subscribed', 'avatar')
         read_only_fields = ('id', 'first_name', 'last_name')
 
     def get_avatar(self, obj):
@@ -81,6 +89,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
+    """ Сериализатор для наследования FollowersSerializer. """
 
     class Meta:
         model = Recipe
@@ -88,6 +97,7 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
 
 
 class FollowersSerializer(serializers.ModelSerializer):
+    """ Сериализатор для полного отображения информации о фоловерах. """
     email = serializers.EmailField(source='following.email')
     id = serializers.IntegerField(source='following.id')
     username = serializers.CharField(source='following.username')
@@ -100,7 +110,8 @@ class FollowersSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar',)
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar',)
 
     def get_avatar(self, obj):
         following_user = obj.following
@@ -110,7 +121,9 @@ class FollowersSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
-        return Follow.objects.filter(user=user, following=obj.following).exists()
+        return Follow.objects.filter(
+            user=user, following=obj.following
+        ).exists()
 
     def get_recipes(self, obj):
         following_user = obj.following
@@ -127,43 +140,12 @@ class FollowersSerializer(serializers.ModelSerializer):
         return Recipe.objects.filter(author=following_user).count()
 
 
-class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        default=serializers.CurrentUserDefault()
-    )
-    following = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='username',
-    )
-
-    class Meta:
-        model = Follow
-        fields = ('user', 'following')
-        read_only_fields = ('user',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Follow.objects.all(),
-                fields=('user', 'following'),
-                message='Вы уже подписаны на этого пользователя'
-            )
-        ]
-
-    def validate(self, data):
-        user = self.context['request'].user
-        following_user = data['following']
-
-        if user == following_user:
-            raise serializers.ValidationError('Невозможно подписаться на себя')
-
-        return data
-
-    def to_internal_value(self, data):
-        data['following'] = self.context['following'].username
-        return super().to_internal_value(data)
+class FollowSerializer(serializers.Serializer):
+    """ Сериализатор для создания подписки.
+    Возвращает данные о пользователе, на которого подписались. """
 
     def to_representation(self, instance):
+        """ Вызывает FollowersSerializer для полного отображения профиля. """
         context = {
             'request': self.context.get('request'),
             'recipes_limit': self.context.get('recipes_limit')

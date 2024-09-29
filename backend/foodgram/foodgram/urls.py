@@ -1,15 +1,16 @@
-from django.contrib import admin
-from django.urls import path, include, re_path
-from drf_yasg import openapi
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from cooking.views import RecipeGetFullLinkView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path, re_path
+
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
+
+from cooking.views import RecipeGetFullLinkView
+
 
 api_patterns = [
-    # path('users/', include('account.urls')),
-    # path('auth/', include('account.urls')),
     path('', include('account.urls')),
     path('', include('cooking.urls')),
 ]
@@ -17,7 +18,10 @@ api_patterns = [
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(api_patterns)),
-    re_path(r'^s/([a-f0-9]{3})/$', RecipeGetFullLinkView.as_view(), name='full-link'),
+    re_path(
+        r'^s/([a-f0-9]{3})/$', RecipeGetFullLinkView.as_view(),
+        name='full-link'
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 schema_view = get_schema_view(
@@ -40,3 +44,7 @@ urlpatterns += [
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0),
             name='schema-redoc'),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)

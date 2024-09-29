@@ -1,15 +1,19 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.core.exceptions import ValidationError
-from PIL import Image as PilImage
 from io import BytesIO
+
+from PIL import Image as PilImage
+
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
 
 User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель для тегов, используемых в рецептах."""
     name = models.CharField(
         max_length=24,
         verbose_name='Название'
@@ -29,7 +33,8 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-
+    """Модель для хранения ингредиентов
+    с их названиями и единицами измерения. """
     name = models.CharField(
         max_length=128,
         verbose_name='Название ингредиента'
@@ -48,6 +53,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Модель для хранения информации о рецепте, включая ингредиенты и теги."""
     name = models.CharField(
         max_length=256,
         verbose_name='Название'
@@ -85,14 +91,20 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
 
     def clean(self):
+        """Проверяет, что рецепт имеет хотя бы один тег и ингредиент. """
         super().clean()
         if not self.tags.exists():
-            raise ValidationError({'tags': 'Необходимо указать хотя бы один тег.'})
+            raise ValidationError(
+                {'tags': 'Необходимо указать хотя бы один тег.'}
+            )
 
         if not self.ingredients.exists():
-            raise ValidationError({'ingredients': 'Необходимо указать хотя бы один ингредиент.'})
+            raise ValidationError(
+                {'ingredients': 'Необходимо указать хотя бы один ингредиент.'}
+            )
 
     def get_optimized_image(self):
+        """Возвращает оптимизированное изображение рецепта. """
         img = PilImage.open(self.image)
         img = img.convert('RGB')
         img.thumbnail((300, 300))
@@ -106,8 +118,15 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_ingredients')
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='recipe_ingredients')
+    """Модель для связи рецепта с ингредиентами и их количеством. """
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        related_name='recipe_ingredients'
+    )
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE,
+        related_name='recipe_ingredients'
+    )
     amount = models.PositiveSmallIntegerField(
         default=1,
         help_text="Введите количество ингредиента.",
@@ -120,7 +139,10 @@ class RecipeIngredient(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['recipe', 'ingredient'], name='unique_recipe_ingredient')
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
         ]
 
     def __str__(self):
@@ -129,8 +151,12 @@ class RecipeIngredient(models.Model):
 
 
 class BaseRelation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=('Пользователь'))
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, verbose_name=('Рецепт'))
+    """Абстрактная модель для хранения отношений пользователя с рецептами. """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=('Пользователь')
+    )
 
     class Meta:
         abstract = True
@@ -147,7 +173,10 @@ class Favorite(BaseRelation):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'recipe'], name='unique_favorite_user_recipe')
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite_user_recipe'
+            )
         ]
         verbose_name = ('Любимый рецепт')
         verbose_name_plural = ('Любимые рецепты')
@@ -167,7 +196,10 @@ class ShoppingCart(BaseRelation):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'recipe'], name='unique_cart_user_recipe')
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_cart_user_recipe'
+            )
         ]
         verbose_name = ('Элемент списка покупок')
         verbose_name_plural = ('Элементы списка покупок')

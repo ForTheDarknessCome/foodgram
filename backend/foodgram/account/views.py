@@ -1,19 +1,23 @@
-from rest_framework import status, viewsets
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import action
-from rest_framework import generics
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+
 from djoser.serializers import SetPasswordSerializer
 
-from account.serializers import SigninSerializer, UserSerializer, AvatarSerializer, FollowSerializer, FollowersSerializer, ExtendedUserCreateSerializer
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from account.models import Avatar, Follow
-from cooking.models import Recipe
-from utils.permissions import CurrentUserAdminOrReadOnly
+from account.serializers import (
+    AvatarSerializer, ExtendedUserCreateSerializer, FollowSerializer,
+    FollowersSerializer, SigninSerializer, UserSerializer
+)
 from utils.pagination import CustomLimitOffsetPagination
+from utils.permissions import CurrentUserAdminOrReadOnly
 
 
 User = get_user_model()
@@ -48,8 +52,9 @@ class SigninView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """ Вьюсет для модели пользователя. """
     serializer_class = UserSerializer
-    queryset = User.objects.all()
+    queryset = User.objects.all().select_related('avatar')
     permission_classes = (CurrentUserAdminOrReadOnly,)
     http_method_names = ['get', 'post']
     pagination_class = CustomLimitOffsetPagination
@@ -85,6 +90,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class UserAvatarView(APIView):
+    """ Вью-класс для добавлелия аватарки через PUT запрос. """
     permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
@@ -104,10 +110,14 @@ class UserAvatarView(APIView):
         user = request.user
         Avatar.objects.filter(user=user).delete()
 
-        return Response({'status': 'Аватар удален'}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'status': 'Аватар удален'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class FollowersList(generics.ListAPIView):
+    """ Дженерик для отображения списка подписок. """
     queryset = Follow.objects.all()
     serializer_class = FollowersSerializer
     pagination_class = CustomLimitOffsetPagination
@@ -124,6 +134,7 @@ class FollowersList(generics.ListAPIView):
 
 
 class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
+    """ Дженерик для создания и удаления подписки. """
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
 
@@ -134,20 +145,40 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         recipes_limit = self.request.query_params.get('recipes_limit', None)
-        context['following'] = self.get_following_user()
         context['recipes_limit'] = recipes_limit
         return context
 
-    def perform_create(self, serializer):
-        """Создаёт подписку."""
+    def post(self, request, *args, **kwargs):
+        user = request.user
         following_user = self.get_following_user()
-        serializer.save(user=self.request.user, following=following_user)
 
-    def get_object(self):
-        """Находит существующую подписку для удаления."""
+        if user == following_user:
+            raise ValidationError("Невозможно подписаться на себя")
+
+        if Follow.objects.filter(user=user, following=following_user).exists():
+            raise ValidationError("Вы уже подписаны на этого пользователя")
+
+        follow_instance = Follow.objects.create(
+            user=user, following=following_user
+        )
+        serializer = FollowSerializer(
+            follow_instance,
+            context=self.get_serializer_context()
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
         following_user = self.get_following_user()
-        try:
-            return Follow.objects.get(user=self.request.user, following=following_user)
-        except Follow.DoesNotExist:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError("Вы не подписаны на пользователя")
+
+        follow_instance = Follow.objects.filter(
+            user=request.user, following=following_user
+        ).first()
+
+        if follow_instance:
+            follow_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {'error': 'Вы не подписаны на этого пользователя'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
