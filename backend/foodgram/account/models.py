@@ -2,12 +2,15 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
+from utils.constants import AVATAR_VERBOSE_NAME, LENGTH_EMAIL
+
 
 class User(AbstractUser):
     """Модель пользователя, расширяющая стандартную модель AbstractUser.
     Добавляет поле email с уникальным значением.
     """
-    email = models.EmailField(_('email address'), unique=True)
+    email = models.EmailField(
+        _('email address'), unique=True, max_length=LENGTH_EMAIL)
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -17,7 +20,7 @@ class User(AbstractUser):
 class Avatar(models.Model):
     """Модель для хранения аватара пользователя."""
     avatar = models.ImageField(
-        'Аватар',
+        AVATAR_VERBOSE_NAME,
         upload_to='users/',
         null=True,
         default=None
@@ -32,7 +35,7 @@ class Avatar(models.Model):
         return self.avatar.url if self.avatar else None
 
     class Meta:
-        verbose_name = 'Аватар'
+        verbose_name = AVATAR_VERBOSE_NAME
         verbose_name_plural = 'Аватарки'
 
     def __str__(self):

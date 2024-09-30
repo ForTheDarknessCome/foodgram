@@ -4,11 +4,11 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-j2&p@l8paf56xf2wl4@azq%okh9j-04ef@*6z#x88dz9s%ua%o'
+SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG') in ['1', 'True']
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',

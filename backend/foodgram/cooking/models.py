@@ -8,6 +8,18 @@ from django.core.files.base import ContentFile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from utils.constants import (
+    INGREDIENT_VERBOSE_NAME,
+    INGREDIENT_VERBOSE_NAME_PLURAL,
+    LENGTH_INGREDIENT_NAME,
+    LENGTH_RECIPE_NAME,
+    LENGTH_SLUG,
+    LENGTH_TAG_NAME,
+    MAX_SLICE,
+    MEASUREMENT_UNIT_LENGTH,
+    RECIPE_VERBOSE_NAME_PLURAL,
+    VERBOSE_NAME
+)
 
 User = get_user_model()
 
@@ -15,11 +27,11 @@ User = get_user_model()
 class Tag(models.Model):
     """Модель для тегов, используемых в рецептах."""
     name = models.CharField(
-        max_length=24,
-        verbose_name='Название'
+        max_length=LENGTH_TAG_NAME,
+        verbose_name=VERBOSE_NAME
     )
     slug = models.SlugField(
-        max_length=50,
+        max_length=LENGTH_SLUG,
         unique=True,
         verbose_name='Слаг'
     )
@@ -29,24 +41,24 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
 
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.name[:MAX_SLICE]}'
 
 
 class Ingredient(models.Model):
     """Модель для хранения ингредиентов
     с их названиями и единицами измерения. """
     name = models.CharField(
-        max_length=128,
-        verbose_name='Название ингредиента'
+        max_length=LENGTH_INGREDIENT_NAME,
+        verbose_name=VERBOSE_NAME
     )
     measurement_unit = models.CharField(
-        max_length=15,
+        max_length=MEASUREMENT_UNIT_LENGTH,
         verbose_name='Единица измерения'
     )
 
     class Meta:
-        verbose_name = 'Ингредиент'
-        verbose_name_plural = 'Ингредиенты'
+        verbose_name = INGREDIENT_VERBOSE_NAME
+        verbose_name_plural = INGREDIENT_VERBOSE_NAME_PLURAL
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -55,8 +67,8 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     """Модель для хранения информации о рецепте, включая ингредиенты и теги."""
     name = models.CharField(
-        max_length=256,
-        verbose_name='Название'
+        max_length=LENGTH_RECIPE_NAME,
+        verbose_name=VERBOSE_NAME
     )
     author = models.ForeignKey(
         User,
@@ -78,7 +90,7 @@ class Recipe(models.Model):
         'Ingredient',
         through='RecipeIngredient',
         related_name='recipes',
-        verbose_name='Ингредиенты',
+        verbose_name=INGREDIENT_VERBOSE_NAME_PLURAL,
     )
     pub_date = models.DateTimeField(
         auto_now=True,
@@ -88,7 +100,7 @@ class Recipe(models.Model):
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
-        verbose_name_plural = 'Рецепты'
+        verbose_name_plural = RECIPE_VERBOSE_NAME_PLURAL
 
     def clean(self):
         """Проверяет, что рецепт имеет хотя бы один тег и ингредиент. """
@@ -114,7 +126,7 @@ class Recipe(models.Model):
         return ContentFile(thumb_io.getvalue(), name=self.image.name)
 
     def __str__(self):
-        return f'{self.name[:50]}'
+        return f'{self.name[:MAX_SLICE]}'
 
 
 class RecipeIngredient(models.Model):
@@ -167,7 +179,7 @@ class Favorite(BaseRelation):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепты',
+        verbose_name=RECIPE_VERBOSE_NAME_PLURAL,
         related_name='favorite'
     )
 
@@ -190,7 +202,7 @@ class ShoppingCart(BaseRelation):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепты',
+        verbose_name=RECIPE_VERBOSE_NAME_PLURAL,
         related_name='shopping_cart'
     )
 

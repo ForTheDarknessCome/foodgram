@@ -40,7 +40,7 @@ class AvatarAdmin(admin.ModelAdmin):
     """Класс, управляющий моделью Avatar для отображения аватаров
     пользователей."""
     model = Avatar
-    list_display = ('user', 'avatar')
+    list_display = ('user',)
     list_filter = ('user__is_staff', 'user__is_active')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
 

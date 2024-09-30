@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from account.models import Avatar, Follow
 from cooking.models import Recipe
+from utils.constants import LENGTH_EMAIL, LENGTH_NAME
 from utils.fields import Base64ImageField
 
 User = get_user_model()
@@ -13,9 +14,9 @@ User = get_user_model()
 
 class ExtendedUserCreateSerializer(UserCreateSerializer):
     """ Расширенный сериализатор для создания пользователя. """
-    first_name = serializers.CharField(required=True, max_length=150)
-    last_name = serializers.CharField(required=True, max_length=150)
-    email = serializers.EmailField(required=True, max_length=254)
+    first_name = serializers.CharField(required=True, max_length=LENGTH_NAME)
+    last_name = serializers.CharField(required=True, max_length=LENGTH_NAME)
+    email = serializers.EmailField(required=True, max_length=LENGTH_EMAIL)
 
     class Meta(UserCreateSerializer.Meta):
         fields = ('email', 'id', 'username', 'first_name',
