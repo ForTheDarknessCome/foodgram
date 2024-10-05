@@ -7,17 +7,11 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from cooking.views import RecipeGetFullLinkView
-
-
-api_patterns = [
-    path('', include('account.urls')),
-    path('', include('cooking.urls')),
-]
+from api.views.cooking import RecipeGetFullLinkView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(api_patterns)),
+    path('api/', include('api.urls')),
     re_path(
         r'^s/([a-f0-9]{3})/$', RecipeGetFullLinkView.as_view(),
         name='full-link'

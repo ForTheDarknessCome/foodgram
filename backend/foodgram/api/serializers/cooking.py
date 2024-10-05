@@ -3,7 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from account.serializers import UserSerializer
+from api.serializers.account import UserSerializer
 from cooking.models import (
     Favorite, Ingredient, Recipe, RecipeIngredient,
     ShoppingCart, Tag

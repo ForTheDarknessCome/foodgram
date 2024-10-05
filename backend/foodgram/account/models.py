@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
-from utils.constants import AVATAR_VERBOSE_NAME, LENGTH_EMAIL
+from utils.constants import LENGTH_EMAIL
 
 
 class User(AbstractUser):
@@ -21,7 +21,7 @@ class User(AbstractUser):
         max_length=150,
     )
     avatar = models.ImageField(
-        AVATAR_VERBOSE_NAME,
+        'Аватар',
         upload_to='users/',
         null=True,
         default=None

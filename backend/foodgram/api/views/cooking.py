@@ -10,14 +10,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.filters import OrderingFilter
 
-from cooking.models import (
-    Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag, Favorite
-)
-from cooking.serializers import (
+from api.serializers.cooking import (
     FavoriteSerializer, GetRecipeSerializer,
     IngredientSerializer, RecipeSerializer,
     ShoppingCartSerializer, TagSerializer
+)
+from cooking.models import (
+    Ingredient, Recipe, RecipeIngredient,
+    ShoppingCart, Tag, Favorite
 )
 from utils.filters import RecipeFilter
 from utils.link_shortener import LinkShortener
