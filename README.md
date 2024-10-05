@@ -1,8 +1,18 @@
 ### Проект Foodgram – Продуктовый помощник
-На сервисе фудграм пользователи могут публиковать рецепты, подписываться 
-на публикации других пользователей, добавлять понравившиеся рецепты в список
-«Избранное», а перед походом в магазин скачивать сводный список 
-продуктов, необходимых для приготовления одного или нескольких выбранных блюд.
+Foodgram — это веб-приложение, которое помогает пользователям сохранять и управлять рецептами, 
+подписываться на других пользователей, добавлять любимые рецепты в избранное и генерировать списки покупок для приготовления блюд. 
+Сервис создан для того, чтобы сделать процесс планирования готовки еды по рецептам и покупки ингредиентов более удобным и организованным.
+На сервисе фудграм пользователи могут публиковать рецепты, подписываться на публикации других пользователей, 
+добавлять понравившиеся рецепты в список «Избранное», а перед походом в магазин скачивать сводный список продуктов, 
+необходимых для приготовления одного или нескольких выбранных блюд.
+
+## Используемые технологии
+- **Django** — основной фреймворк для разработки веб-приложения.
+- **Django REST Framework** — для создания RESTful API.
+- **PostgreSQL** — основная база данных (в Docker-контейнерах).
+- **Docker** — для контейнеризации приложения и его зависимостей.
+- **Nginx** — для развертывания и проксирования запросов.
+- **Git** — для управления версиями кода.
 
 #### Доступ для неавторизованных пользователей
 - Доступна главная страница.
@@ -37,9 +47,63 @@
 ```bash
 git clone git@github.com:ForTheDarknessCome/foodgram.git
 ```
-- В главной директории проекта необходимо создать файл .env, с переменными окружения (думаю нужно будет куда-то прикрепить образец после дополнения данных деплоя)
+- В главной директории проекта необходимо создать файл .env, с переменными окружения.
 - Сборка и развертывание контейнеров
 ```bash
 cd infra
 docker-compose up -d --build
+```
+- Выполните миграции, соберите статику, создайте суперпользователя
+```bash
+docker-compose exec backend python manage.py makemigrations
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py collectstatic --no-input
+docker-compose exec backend python manage.py createsuperuser
+```
+- Наполните базу данных ингредиентами и тегами
+```bash
+docker-compose exec backend python manage.py load_data
+```
+- или наполните базу тестовыми данными (включают посты и пользователей)
+```bash
+docker-compose exec backend python manage.py loaddata data/data.json 
+```
+- Стандартная админ-панель Django доступна по адресу [`https://localhost/admin/`](https://localhost/admin/)
+- Документация к проекту доступна по адресу [`https://localhost/api/docs/`](`https://localhost/api/docs/`)
+
+#### Запуск API проекта в dev-режиме
+
+- Клонирование удаленного репозитория (см. выше)
+- Создание виртуального окружения и установка зависимостей
+```bash
+cd backend
+python -m venv venv
+. venv/Scripts/activate (windows)
+. venv/bin/activate (linux)
+pip install --upgade pip
+pip install -r -requirements.txt
+```
+- Примените миграции и соберите статику
+```bash
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+- Наполнение базы данных ингредиентами и тегами
+```bash
+python manage.py load_data
+```
+- в файле foodgram/setting.py замените БД на встроенную SQLite
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+```
+
+- Запуск сервера
+```bash
+python manage.py runserver 
 ```
