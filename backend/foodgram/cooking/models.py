@@ -9,26 +9,23 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from utils.constants import (
-    INGREDIENT_VERBOSE_NAME,
-    INGREDIENT_VERBOSE_NAME_PLURAL,
     LENGTH_INGREDIENT_NAME,
     LENGTH_RECIPE_NAME,
     LENGTH_SLUG,
     LENGTH_TAG_NAME,
     MAX_SLICE,
     MEASUREMENT_UNIT_LENGTH,
-    RECIPE_VERBOSE_NAME_PLURAL,
-    VERBOSE_NAME
 )
 
 User = get_user_model()
 
 
 class Tag(models.Model):
-    """Модель для тегов, используемых в рецептах."""
+    '''Модель для тегов, используемых в рецептах.'''
+
     name = models.CharField(
         max_length=LENGTH_TAG_NAME,
-        verbose_name=VERBOSE_NAME
+        verbose_name='Название'
     )
     slug = models.SlugField(
         max_length=LENGTH_SLUG,
@@ -41,15 +38,16 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
 
     def __str__(self):
-        return f'{self.name[:MAX_SLICE]}'
+        return self.name
 
 
 class Ingredient(models.Model):
-    """Модель для хранения ингредиентов
-    с их названиями и единицами измерения. """
+    '''Модель для хранения ингредиентов
+    с их названиями и единицами измерения.'''
+
     name = models.CharField(
         max_length=LENGTH_INGREDIENT_NAME,
-        verbose_name=VERBOSE_NAME
+        verbose_name='Название'
     )
     measurement_unit = models.CharField(
         max_length=MEASUREMENT_UNIT_LENGTH,
@@ -57,40 +55,46 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        verbose_name = INGREDIENT_VERBOSE_NAME
-        verbose_name_plural = INGREDIENT_VERBOSE_NAME_PLURAL
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
 
 
 class Recipe(models.Model):
-    """Модель для хранения информации о рецепте, включая ингредиенты и теги."""
+    '''Модель для хранения информации о рецепте, включая ингредиенты и теги.'''
+
     name = models.CharField(
         max_length=LENGTH_RECIPE_NAME,
-        verbose_name=VERBOSE_NAME
+        verbose_name='Название'
     )
     author = models.ForeignKey(
         User,
         related_name='recipes',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        verbose_name="Автор рецепта"
     )
-    image = models.ImageField(upload_to='recipes/images/')
+    image = models.ImageField(
+        upload_to='recipes/images/',
+        verbose_name='Изображение рецепта'
+    )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления (в минутах)',
         help_text='Укажите время приготовления в минутах.',
         validators=[MinValueValidator(1)]
     )
-    text = models.TextField(blank=False)
+    text = models.TextField(blank=False, verbose_name='Описание рецепта')
     tags = models.ManyToManyField(
         'Tag',
-        related_name='recipes'
+        related_name='recipes',
+        verbose_name='Теги'
     )
     ingredients = models.ManyToManyField(
         'Ingredient',
         through='RecipeIngredient',
         related_name='recipes',
-        verbose_name=INGREDIENT_VERBOSE_NAME_PLURAL,
+        verbose_name='Ингредиенты'
     )
     pub_date = models.DateTimeField(
         auto_now=True,
@@ -100,10 +104,11 @@ class Recipe(models.Model):
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
-        verbose_name_plural = RECIPE_VERBOSE_NAME_PLURAL
+        verbose_name_plural = 'Рецепты'
 
     def clean(self):
-        """Проверяет, что рецепт имеет хотя бы один тег и ингредиент. """
+        '''Проверяет, что рецепт имеет хотя бы один тег и ингредиент.'''
+
         super().clean()
         if not self.tags.exists():
             raise ValidationError(
@@ -116,21 +121,23 @@ class Recipe(models.Model):
             )
 
     def get_optimized_image(self):
-        """Возвращает оптимизированное изображение рецепта. """
-        img = PilImage.open(self.image)
-        img = img.convert('RGB')
-        img.thumbnail((300, 300))
+        '''Возвращает оптимизированное изображение рецепта.'''
 
-        thumb_io = BytesIO()
-        img.save(thumb_io, format='JPEG', quality=85)
-        return ContentFile(thumb_io.getvalue(), name=self.image.name)
+        image = PilImage.open(self.image)
+        image = image.convert('RGB')
+        image.thumbnail((300, 300))
+
+        thumbnail_io = BytesIO()
+        image.save(thumbnail_io, format='JPEG', quality=85)
+        return ContentFile(thumbnail_io.getvalue(), name=self.image.name)
 
     def __str__(self):
         return f'{self.name[:MAX_SLICE]}'
 
 
 class RecipeIngredient(models.Model):
-    """Модель для связи рецепта с ингредиентами и их количеством. """
+    '''Модель для связи рецепта с ингредиентами и их количеством.'''
+
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
         related_name='recipe_ingredients'
@@ -141,7 +148,7 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         default=1,
-        help_text="Введите количество ингредиента.",
+        help_text='Введите количество ингредиента.',
         verbose_name="Количество ингредиента",
         validators=[
             MinValueValidator(1),
@@ -162,25 +169,20 @@ class RecipeIngredient(models.Model):
                 f' {self.amount}, {self.ingredient.measurement_unit}')
 
 
-class BaseRelation(models.Model):
-    """Абстрактная модель для хранения отношений пользователя с рецептами. """
+class Favorite(models.Model):
+    '''Модель для хранения избранных рецептов пользователя.'''
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name=('Пользователь')
+        verbose_name='Пользователь',
+        related_name='favorites'
     )
-
-    class Meta:
-        abstract = True
-
-
-class Favorite(BaseRelation):
-    """Модель для хранения избранных рецептов пользователя."""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name=RECIPE_VERBOSE_NAME_PLURAL,
-        related_name='favorite'
+        verbose_name='Рецепты',
+        related_name='favorites'
     )
 
     class Meta:
@@ -197,13 +199,20 @@ class Favorite(BaseRelation):
         return f'{self.recipe} в избранном у пользователя {self.user}'
 
 
-class ShoppingCart(BaseRelation):
-    """Модель для хранения рецептов в корзине покупок пользователя."""
+class ShoppingCart(models.Model):
+    '''Модель для хранения рецептов в корзине покупок пользователя.'''
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='shopping_carts'
+    )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name=RECIPE_VERBOSE_NAME_PLURAL,
-        related_name='shopping_cart'
+        verbose_name='Рецепты',
+        related_name='shopping_carts'
     )
 
     class Meta:

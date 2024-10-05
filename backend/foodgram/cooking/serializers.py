@@ -19,7 +19,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """ Сериализатор для получения полей тегов. """
+    '''Сериализатор для получения полей тегов.'''
 
     class Meta:
         model = Tag
@@ -27,7 +27,8 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор для подробного описания ингредиентов в рецепте."""
+    '''Сериализатор для подробного описания ингредиентов в рецепте.'''
+
     name = serializers.CharField(
         source='ingredient.name', read_only=True)
     id = serializers.PrimaryKeyRelatedField(
@@ -41,9 +42,11 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
-    """ Сериализатор для добавления существующих ингредиентов
-    в рецепт и указания количества.
-    Используется для определения поля ingredients в RecipeSerializer. """
+    '''Сериализатор для добавления существующих ингредиентов в рецепт.
+
+    Используется для определения поля ingredients в RecipeSerializer.
+    '''
+
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient')
@@ -54,7 +57,8 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    """ Сериализатор для создания рецептов. """
+    '''Сериализатор для создания рецептов.'''
+
     image = Base64ImageField(required=True, allow_null=True)
     ingredients = AddIngredientSerializer(many=True, required=True)
 
@@ -72,10 +76,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
 
         ingredients_list = [item['ingredient'] for item in data['ingredients']]
-        all_ingredients = len(ingredients_list)
-        distinct_ingredients = len(set(ingredients_list))
-        if all_ingredients != distinct_ingredients:
-            raise ValidationError(
+        if len(ingredients_list) != len(set(ingredients_list)):
+            raise serializers.ValidationError(
                 {'error': 'Ингредиенты должны быть уникальными'}
             )
 
@@ -85,14 +87,13 @@ class RecipeSerializer(serializers.ModelSerializer):
                 {'tags': 'Поле тегов не может быть пустым.'}
             )
 
-        all_tags, distinct_tags = len(tags), len(set(tags))
-        if all_tags != distinct_tags:
+        if len(tags) != len(set(tags)):
             raise serializers.ValidationError(
                 {'error': 'Теги должны быть уникальными'}
             )
         return data
 
-    def get_ingredients(self, recipe, ingredients):
+    def create_ingredients(self, recipe, ingredients):
         RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
@@ -108,7 +109,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
 
-        self.get_ingredients(recipe, ingredients)
+        self.create_ingredients(recipe, ingredients)
 
         return recipe
 
@@ -120,18 +121,18 @@ class RecipeSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.filter(recipe=instance).delete()
 
         instance.tags.set(tags)
-        self.get_ingredients(instance, ingredients)
+        self.create_ingredients(instance, ingredients)
 
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        """ Возвращает пользователю полный экземпляр рецепта """
-        context = {'request': self.context.get('request')}
-        return GetRecipeSerializer(instance, context=context).data
+        '''Возвращает пользователю полный экземпляр рецепта.'''
+
+        return GetRecipeSerializer(instance, context=self.context).data
 
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
-    """ Сериализатор для отображения краткой информации о рецепте. """
+    '''Сериализатор для отображения краткой информации о рецепте.'''
 
     class Meta:
         model = Recipe
@@ -139,13 +140,14 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
 
 
 class GetRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для отображения полной информации о рецепте."""
+    '''Сериализатор для отображения полной информации о рецепте.'''
+
     tags = TagSerializer(many=True)
     author = UserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(read_only=True, many=True,
                                              source='recipe_ingredients')
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    is_favorited = serializers.BooleanField(read_only=True)
+    is_in_shopping_cart = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Recipe
@@ -153,30 +155,18 @@ class GetRecipeSerializer(serializers.ModelSerializer):
                   'is_favorited', 'is_in_shopping_cart',
                   'name', 'image', 'text', 'cooking_time')
 
-    def get_is_favorited(self, object):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return object.favorite.filter(user=user).exists()
-        return False
 
-    def get_is_in_shopping_cart(self, object):
-        user = self.context.get('request').user
-        if user.is_authenticated:
-            return object.shopping_cart.filter(user=user).exists()
-        return False
+class BaseRecipeActionSerializer(serializers.ModelSerializer):
+    '''Базовый сериализатор для действий с рецептами.'''
 
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериализатор добавления/удаления рецепта в избранное."""
     class Meta:
-        model = Favorite
         fields = ('user', 'recipe')
 
     def validate(self, data):
         user, recipe = data.get('user'), data.get('recipe')
         if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
             raise ValidationError(
-                {'error': 'Этот рецепт уже добавлен'}
+                {'error': 'Этот рецепт уже добавлен.'}
             )
         return data
 
@@ -185,7 +175,15 @@ class FavoriteSerializer(serializers.ModelSerializer):
         return RecipeDetailSerializer(instance.recipe, context=context).data
 
 
-class ShoppingCartSerializer(FavoriteSerializer):
-    """Сериализатор добавления/удаления рецепта в список покупок."""
-    class Meta(FavoriteSerializer.Meta):
+class FavoriteSerializer(BaseRecipeActionSerializer):
+    '''Сериализатор добавления/удаления рецепта в избранное.'''
+
+    class Meta(BaseRecipeActionSerializer.Meta):
+        model = Favorite
+
+
+class ShoppingCartSerializer(BaseRecipeActionSerializer):
+    '''Сериализатор добавления/удаления рецепта в список покупок.'''
+
+    class Meta(BaseRecipeActionSerializer.Meta):
         model = ShoppingCart

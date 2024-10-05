@@ -1,20 +1,18 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 
 from djoser.serializers import SetPasswordSerializer
-
-from rest_framework import generics, status, viewsets
+from rest_framework import mixins, generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from account.models import Avatar, Follow
+from account.models import Follow
 from account.serializers import (
     AvatarSerializer, ExtendedUserCreateSerializer, FollowSerializer,
-    FollowersSerializer, SigninSerializer, UserSerializer
+    FollowersSerializer, UserSerializer
 )
 from utils.pagination import CustomLimitOffsetPagination
 from utils.permissions import CurrentUserAdminOrReadOnly
@@ -23,48 +21,16 @@ from utils.permissions import CurrentUserAdminOrReadOnly
 User = get_user_model()
 
 
-class SignoutView(APIView):
-    """ Вью-класс для логаута с отправкой 204 на фронтенд. """
-    def post(self, request):
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class UserViewSet(mixins.ListModelMixin,
+                  mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  viewsets.GenericViewSet):
+    '''Вьюсет для модели пользователя.'''
 
-
-class SigninView(APIView):
-    """ Вью-класс для авторизации с выдачей токена. """
-    serializer_class = SigninSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data['user']
-        tokens = self.get_token(user)
-
-        return Response(tokens, status=status.HTTP_200_OK)
-
-    def get_token(self, user):
-        """ Генерирует токены для пользователя. """
-        refresh = RefreshToken.for_user(user)
-        return {
-            'auth_token': str(refresh.access_token),
-        }
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    """ Вьюсет для модели пользователя. """
     serializer_class = UserSerializer
-    queryset = User.objects.all().select_related('avatar')
+    queryset = User.objects.all()
     permission_classes = (CurrentUserAdminOrReadOnly,)
-    http_method_names = ['get', 'post']
     pagination_class = CustomLimitOffsetPagination
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return [AllowAny()]
-        if self.action == 'me' or self.action == 'set_password':
-            return [IsAuthenticated()]
-        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -73,58 +39,72 @@ class UserViewSet(viewsets.ModelViewSet):
             return SetPasswordSerializer
         return self.serializer_class
 
-    @action(["post"], detail=False)
+    @action(['post'], detail=False, permission_classes=[IsAuthenticated])
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        self.request.user.set_password(serializer.data["new_password"])
+        self.request.user.set_password(serializer.data['new_password'])
         self.request.user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated])
     def me(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(user, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=False, methods=['put', 'delete'],
+            permission_classes=[IsAuthenticated], url_path='me/avatar')
+    def avatar(self, request, *args, **kwargs):
+        '''Добавление обновление и удаление аватара пользователя.'''
 
-class UserAvatarView(APIView):
-    """ Вью-класс для добавлелия аватарки через PUT запрос. """
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, *args, **kwargs):
-        serializer = AvatarSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         user = request.user
 
-        avatar, _ = Avatar.objects.get_or_create(user=user)
-        avatar.avatar = serializer.validated_data['avatar']
-        avatar.save()
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-        avatar_url = avatar.get_photo_url()
+            user.avatar = serializer.validated_data['avatar']
+            user.save()
 
-        return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
+            return Response(
+                {'avatar': user.get_photo_url()}, status=status.HTTP_200_OK
+            )
 
-    def delete(self, request, *args, **kwargs):
-        user = request.user
-        Avatar.objects.filter(user=user).delete()
+        user.avatar = None
+        user.save()
 
         return Response(
             {'status': 'Аватар удален'},
             status=status.HTTP_204_NO_CONTENT
         )
 
+    def create(self, request, *args, **kwargs):
+        '''Создание нового пользователя через сериализатор.'''
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class FollowersList(generics.ListAPIView):
-    """ Дженерик для отображения списка подписок. """
-    queryset = Follow.objects.all()
+    '''Дженерик для отображения списка подписок.'''
+
     serializer_class = FollowersSerializer
     pagination_class = CustomLimitOffsetPagination
 
     def get_queryset(self):
         user = self.request.user
-        return Follow.objects.filter(user=user)
+        queryset = (
+            Follow.objects.filter(user=user)
+            .prefetch_related('following__recipes')
+            .annotate(recipes_count=Count('following__recipes', distinct=True))
+        )
+
+        return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -134,13 +114,22 @@ class FollowersList(generics.ListAPIView):
 
 
 class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
-    """ Дженерик для создания и удаления подписки. """
+    '''Дженерик для создания и удаления подписки.'''
+
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
 
     def get_following_user(self):
         following_id = self.kwargs.get('following_id')
-        return get_object_or_404(User, pk=following_id)
+        try:
+            following_user = (
+                User.objects
+                .annotate(recipes_count=Count('recipes'))
+                .get(pk=following_id)
+            )
+        except User.DoesNotExist:
+            return get_object_or_404(User, pk=following_id)
+        return following_user
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -153,19 +142,25 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
         following_user = self.get_following_user()
 
         if user == following_user:
-            raise ValidationError("Невозможно подписаться на себя")
+            raise ValidationError('Невозможно подписаться на себя')
 
         if Follow.objects.filter(user=user, following=following_user).exists():
-            raise ValidationError("Вы уже подписаны на этого пользователя")
+            raise ValidationError('Вы уже подписаны на этого пользователя')
 
-        follow_instance = Follow.objects.create(
-            user=user, following=following_user
-        )
         serializer = FollowSerializer(
-            follow_instance,
+            data={'user': user.id, 'following': following_user.id},
             context=self.get_serializer_context()
         )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        recipes_count = following_user.recipes_count
+
+        response_data = {
+            **serializer.data,
+            'recipes_count': recipes_count
+        }
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
         following_user = self.get_following_user()

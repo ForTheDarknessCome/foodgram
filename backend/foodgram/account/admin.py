@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from account.models import Avatar, Follow, User
+from account.models import Follow, User
 
 
+@admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """Класс, управляющий моделью User для отображения и редактирования
-    данных пользователей."""
+    '''Класс, управляющий моделью User для отображения и редактирования
+    данных пользователей.'''
+
     model = User
     list_display = ('username', 'email', 'is_staff', 'is_active')
     list_editable = ('is_active',)
@@ -36,23 +38,11 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
-class AvatarAdmin(admin.ModelAdmin):
-    """Класс, управляющий моделью Avatar для отображения аватаров
-    пользователей."""
-    model = Avatar
-    list_display = ('user',)
-    list_filter = ('user__is_staff', 'user__is_active')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name')
-
-
+@admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
-    """Класс, управляющий моделью Follow для отображения подписок
-    пользователей."""
+    '''Класс, управляющий моделью Follow для отображения подписок
+    пользователей.'''
+
     model = Follow
     list_display = ('user', 'following')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
-
-
-admin.site.register(User, UserAdmin)
-admin.site.register(Follow, FollowAdmin)
-admin.site.register(Avatar, AvatarAdmin)

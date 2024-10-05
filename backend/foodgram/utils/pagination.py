@@ -1,6 +1,9 @@
 from rest_framework.pagination import LimitOffsetPagination
 
+from utils.constants import DEFAULT_PAGINATION_LIMIT
+
 
 class CustomLimitOffsetPagination(LimitOffsetPagination):
-    """ Кастомный класс пагинации с выдачей в 6 экземпляров """
-    default_limit = 6
+    '''Кастомный класс пагинации с выдачей в 6 экземпляров.'''
+
+    default_limit = DEFAULT_PAGINATION_LIMIT

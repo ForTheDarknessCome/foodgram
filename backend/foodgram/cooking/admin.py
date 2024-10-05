@@ -10,7 +10,8 @@ from cooking.models import (
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    """Inline для редактирования ингредиентов рецепта в админке. """
+    '''Inline для редактирования ингредиентов рецепта в админке.'''
+
     model = RecipeIngredient
     extra = 1
     fields = ('ingredient', 'amount')
@@ -18,21 +19,27 @@ class RecipeIngredientInline(admin.TabularInline):
     verbose_name_plural = 'Ингредиенты'
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    """Админка для управления тегами рецептов. """
+    '''Админка для управления тегами рецептов.'''
+
     model = Tag
     list_display = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    """Админка для управления ингредиентами. """
+    '''Админка для управления ингредиентами.'''
+
     list_display = ('name', 'measurement_unit')
     search_fields = ('name',)
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """Админка для управления рецептами. """
+    '''Админка для управления рецептами.'''
+
     model = Recipe
     list_display = ('name', 'author', 'cooking_time',
                     'pub_date', 'display_image')
@@ -53,7 +60,8 @@ class RecipeAdmin(admin.ModelAdmin):
     )
 
     def display_image(self, obj):
-        """Отображает изображение рецепта в админке. """
+        '''Отображает изображение рецепта в админке.'''
+
         optimized_image = obj.get_optimized_image()
         optimized_image.seek(0)
         img_data = base64.b64encode(optimized_image.read()).decode()
@@ -66,22 +74,19 @@ class RecipeAdmin(admin.ModelAdmin):
     display_image.short_description = 'Image'
 
 
+@admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    """Админка для управления избранными рецептами пользователей. """
+    '''Админка для управления избранными рецептами пользователей.'''
+
     list_display = ('user', 'recipe')
     list_filter = ('user',)
     search_fields = ('user__username', 'recipe__name')
 
 
+@admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
-    """Админка для управления корзиной покупок пользователей. """
+    '''Админка для управления корзиной покупок пользователей.'''
+
     list_display = ('user', 'recipe')
     list_filter = ('user',)
     search_fields = ('user__username', 'recipe__name')
-
-
-admin.site.register(Tag, TagAdmin)
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Favorite, FavoriteAdmin)
-admin.site.register(ShoppingCart, ShoppingCartAdmin)

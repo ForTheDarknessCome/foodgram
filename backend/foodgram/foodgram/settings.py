@@ -19,7 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    'rest_framework_simplejwt',
+    'rest_framework.authtoken',
     'drf_yasg',
     'debug_toolbar',
     'djoser',
@@ -106,19 +106,14 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
     'AUTH_HEADER_TYPES': ('Token',),
 }
-
-AUTHENTICATION_BACKENDS = [
-    'account.backends.EmailBackend',
-    'django.contrib.auth.backends.ModelBackend'
-]
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -128,4 +123,8 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     }
+}
+
+DJOSER = {
+    "LOGIN_FIELD": "email",
 }

@@ -6,46 +6,52 @@ from utils.constants import AVATAR_VERBOSE_NAME, LENGTH_EMAIL
 
 
 class User(AbstractUser):
-    """Модель пользователя, расширяющая стандартную модель AbstractUser.
+    '''Модель пользователя, расширяющая стандартную модель AbstractUser.
     Добавляет поле email с уникальным значением.
-    """
+    '''
+
     email = models.EmailField(
         _('email address'), unique=True, max_length=LENGTH_EMAIL)
-
-    class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-
-
-class Avatar(models.Model):
-    """Модель для хранения аватара пользователя."""
+    first_name = models.CharField(
+        verbose_name='Имя',
+        max_length=150,
+    )
+    last_name = models.CharField(
+        verbose_name='Фамилия',
+        max_length=150,
+    )
     avatar = models.ImageField(
         AVATAR_VERBOSE_NAME,
         upload_to='users/',
         null=True,
         default=None
     )
-    user = models.OneToOneField(
-        User, related_name='avatar',
-        on_delete=models.CASCADE
-    )
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'avatar')
 
     def get_photo_url(self):
-        """Возвращает URL аватара, если он существует."""
+        '''Возвращает URL аватара, если он существует.'''
         return self.avatar.url if self.avatar else None
 
     class Meta:
-        verbose_name = AVATAR_VERBOSE_NAME
-        verbose_name_plural = 'Аватарки'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('username', 'email'),
+                name='unique_user'
+            )
+        ]
 
     def __str__(self):
-        return f'Пользователь {self.user}: аватар {self.get_photo_url()}'
+        return self.username
 
 
 class Follow(models.Model):
-    """Модель для хранения подписок пользователей.
+    '''Модель для хранения подписок пользователей.
     Позволяет отслеживать, кто на кого подписан.
-    """
+    '''
+
     user = models.ForeignKey(
         User,
         related_name='following', on_delete=models.CASCADE,
