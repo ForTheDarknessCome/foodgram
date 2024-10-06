@@ -4,13 +4,17 @@ from django.contrib import admin
 from django.utils.html import mark_safe
 
 from cooking.models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag
 )
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    '''Inline для редактирования ингредиентов рецепта в админке.'''
+    """Inline для редактирования ингредиентов рецепта в админке."""
 
     model = RecipeIngredient
     extra = 1
@@ -21,7 +25,7 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    '''Админка для управления тегами рецептов.'''
+    """Админка для управления тегами рецептов."""
 
     model = Tag
     list_display = ('name', 'slug')
@@ -30,7 +34,7 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    '''Админка для управления ингредиентами.'''
+    """Админка для управления ингредиентами."""
 
     list_display = ('name', 'measurement_unit')
     search_fields = ('name',)
@@ -38,11 +42,16 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    '''Админка для управления рецептами.'''
+    """Админка для управления рецептами."""
 
     model = Recipe
-    list_display = ('name', 'author', 'cooking_time',
-                    'pub_date', 'display_image')
+    list_display = (
+        'name',
+        'author',
+        'cooking_time',
+        'pub_date',
+        'display_image',
+    )
     list_filter = ('author', 'tags')
     search_fields = ('name', 'author__username')
     inlines = [RecipeIngredientInline]
@@ -50,18 +59,23 @@ class RecipeAdmin(admin.ModelAdmin):
     ordering = ('-pub_date',)
 
     fieldsets = (
-        ('Основная информация', {
-            'fields': ('name', 'author', 'image', 'cooking_time', 'text'),
-        }),
-        ('Дополнительно', {
-            'fields': ('tags',),
-            'description': 'Выберите теги для рецепта.',
-        }),
+        (
+            'Основная информация',
+            {
+                'fields': ('name', 'author', 'image', 'cooking_time', 'text'),
+            },
+        ),
+        (
+            'Дополнительно',
+            {
+                'fields': ('tags',),
+                'description': 'Выберите теги для рецепта.',
+            },
+        ),
     )
 
     def display_image(self, obj):
-        '''Отображает изображение рецепта в админке.'''
-
+        """Отображает изображение рецепта в админке."""
         optimized_image = obj.get_optimized_image()
         optimized_image.seek(0)
         img_data = base64.b64encode(optimized_image.read()).decode()
@@ -76,7 +90,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    '''Админка для управления избранными рецептами пользователей.'''
+    """Админка для управления избранными рецептами пользователей."""
 
     list_display = ('user', 'recipe')
     list_filter = ('user',)
@@ -85,7 +99,7 @@ class FavoriteAdmin(admin.ModelAdmin):
 
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
-    '''Админка для управления корзиной покупок пользователей.'''
+    """Админка для управления корзиной покупок пользователей."""
 
     list_display = ('user', 'recipe')
     list_filter = ('user',)

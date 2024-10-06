@@ -6,12 +6,13 @@ from utils.constants import LENGTH_EMAIL
 
 
 class User(AbstractUser):
-    '''Модель пользователя, расширяющая стандартную модель AbstractUser.
+    """Модель пользователя, расширяющая стандартную модель AbstractUser.
     Добавляет поле email с уникальным значением.
-    '''
+    """
 
     email = models.EmailField(
-        _('email address'), unique=True, max_length=LENGTH_EMAIL)
+        _('email address'), unique=True, max_length=LENGTH_EMAIL
+    )
     first_name = models.CharField(
         verbose_name='Имя',
         max_length=150,
@@ -21,16 +22,13 @@ class User(AbstractUser):
         max_length=150,
     )
     avatar = models.ImageField(
-        'Аватар',
-        upload_to='users/',
-        null=True,
-        default=None
+        'Аватар', upload_to='users/', null=True, default=None
     )
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'avatar')
 
     def get_photo_url(self):
-        '''Возвращает URL аватара, если он существует.'''
+        """Возвращает URL аватара, если он существует."""
         return self.avatar.url if self.avatar else None
 
     class Meta:
@@ -38,8 +36,7 @@ class User(AbstractUser):
         verbose_name_plural = 'Пользователи'
         constraints = [
             models.UniqueConstraint(
-                fields=('username', 'email'),
-                name='unique_user'
+                fields=('username', 'email'), name='unique_user'
             )
         ]
 
@@ -48,20 +45,22 @@ class User(AbstractUser):
 
 
 class Follow(models.Model):
-    '''Модель для хранения подписок пользователей.
+    """Модель для хранения подписок пользователей.
     Позволяет отслеживать, кто на кого подписан.
-    '''
+    """
 
     user = models.ForeignKey(
         User,
-        related_name='following', on_delete=models.CASCADE,
-        verbose_name='Автор'
+        related_name='following',
+        on_delete=models.CASCADE,
+        verbose_name='Автор',
     )
 
     following = models.ForeignKey(
         User,
-        related_name='followers', on_delete=models.CASCADE,
-        verbose_name='Подписчик'
+        related_name='followers',
+        on_delete=models.CASCADE,
+        verbose_name='Подписчик',
     )
 
     class Meta:
@@ -69,8 +68,8 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'],
-                name='unique_follower')
+                fields=['user', 'following'], name='unique_follower'
+            )
         ]
 
     def __str__(self):

@@ -3,13 +3,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from djoser.views import TokenCreateView, TokenDestroyView
 
-from api.views.account import (
-    FollowersList, FollowView, UserViewSet
-)
+from api.views.account import FollowersList, FollowView, UserViewSet
 
 from api.views.cooking import (
-    IngredientViewSet, RecipeGetShortLinkView,
-    RecipeViewSet, TagViewSet
+    IngredientViewSet,
+    RecipeGetShortLinkView,
+    RecipeViewSet,
+    TagViewSet,
 )
 
 

@@ -4,6 +4,6 @@ from utils.constants import DEFAULT_PAGINATION_LIMIT
 
 
 class CustomLimitOffsetPagination(LimitOffsetPagination):
-    '''Кастомный класс пагинации с выдачей в 6 экземпляров.'''
+    """Кастомный класс пагинации с выдачей в 6 экземпляров."""
 
     default_limit = DEFAULT_PAGINATION_LIMIT

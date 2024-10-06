@@ -11,8 +11,11 @@ from rest_framework.response import Response
 
 from account.models import Follow
 from api.serializers.account import (
-    AvatarSerializer, ExtendedUserCreateSerializer, FollowSerializer,
-    FollowersSerializer, UserSerializer
+    AvatarSerializer,
+    ExtendedUserCreateSerializer,
+    FollowSerializer,
+    FollowersSerializer,
+    UserSerializer,
 )
 from utils.pagination import CustomLimitOffsetPagination
 from utils.permissions import CurrentUserAdminOrReadOnly
@@ -21,11 +24,13 @@ from utils.permissions import CurrentUserAdminOrReadOnly
 User = get_user_model()
 
 
-class UserViewSet(mixins.ListModelMixin,
-                  mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
-                  viewsets.GenericViewSet):
-    '''Вьюсет для модели пользователя.'''
+class UserViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Вьюсет для модели пользователя."""
 
     serializer_class = UserSerializer
     queryset = User.objects.all()
@@ -48,18 +53,22 @@ class UserViewSet(mixins.ListModelMixin,
         self.request.user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'],
-            permission_classes=[IsAuthenticated])
+    @action(
+        detail=False, methods=['get'], permission_classes=[IsAuthenticated]
+    )
     def me(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(user, context={'request': request})
         return Response(serializer.data)
 
-    @action(detail=False, methods=['put', 'delete'],
-            permission_classes=[IsAuthenticated], url_path='me/avatar')
+    @action(
+        detail=False,
+        methods=['put', 'delete'],
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
+    )
     def avatar(self, request, *args, **kwargs):
-        '''Добавление обновление и удаление аватара пользователя.'''
-
+        """Добавление обновление и удаление аватара пользователя."""
         user = request.user
 
         if request.method == 'PUT':
@@ -72,18 +81,17 @@ class UserViewSet(mixins.ListModelMixin,
             return Response(
                 {'avatar': user.get_photo_url()}, status=status.HTTP_200_OK
             )
+        if user.avatar:
+            user.avatar.delete()
 
-        user.avatar = None
         user.save()
 
         return Response(
-            {'status': 'Аватар удален'},
-            status=status.HTTP_204_NO_CONTENT
+            {'status': 'Аватар удален'}, status=status.HTTP_204_NO_CONTENT
         )
 
     def create(self, request, *args, **kwargs):
-        '''Создание нового пользователя через сериализатор.'''
-
+        """Функция для создание нового пользователя."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -91,7 +99,7 @@ class UserViewSet(mixins.ListModelMixin,
 
 
 class FollowersList(generics.ListAPIView):
-    '''Дженерик для отображения списка подписок.'''
+    """Дженерик для отображения списка подписок."""
 
     serializer_class = FollowersSerializer
     pagination_class = CustomLimitOffsetPagination
@@ -114,7 +122,7 @@ class FollowersList(generics.ListAPIView):
 
 
 class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
-    '''Дженерик для создания и удаления подписки.'''
+    """Дженерик для создания и удаления подписки."""
 
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
@@ -122,11 +130,9 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
     def get_following_user(self):
         following_id = self.kwargs.get('following_id')
         try:
-            following_user = (
-                User.objects
-                .annotate(recipes_count=Count('recipes'))
-                .get(pk=following_id)
-            )
+            following_user = User.objects.annotate(
+                recipes_count=Count('recipes')
+            ).get(pk=following_id)
         except User.DoesNotExist:
             return get_object_or_404(User, pk=following_id)
         return following_user
@@ -149,31 +155,27 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
 
         serializer = FollowSerializer(
             data={'user': user.id, 'following': following_user.id},
-            context=self.get_serializer_context()
+            context=self.get_serializer_context(),
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         recipes_count = following_user.recipes_count
 
-        response_data = {
-            **serializer.data,
-            'recipes_count': recipes_count
-        }
+        response_data = {**serializer.data, 'recipes_count': recipes_count}
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
         following_user = self.get_following_user()
 
-        follow_instance = Follow.objects.filter(
+        deleted_count, _ = Follow.objects.filter(
             user=request.user, following=following_user
-        ).first()
+        ).delete()
 
-        if follow_instance:
-            follow_instance.delete()
+        if deleted_count > 0:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(
             {'error': 'Вы не подписаны на этого пользователя'},
-            status=status.HTTP_400_BAD_REQUEST
+            status=status.HTTP_400_BAD_REQUEST,
         )
