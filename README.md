@@ -47,29 +47,14 @@ Foodgram — это веб-приложение, которое помогает
 ```bash
 git clone git@github.com:ForTheDarknessCome/foodgram.git
 ```
-- В главной директории проекта необходимо создать файл .env, с переменными окружения.
+- В главной директории проекта необходимо создать файл .env с переменными окружения(в пример предоставлен файл .env.example в корне проекта).
 - Сборка и развертывание контейнеров
 ```bash
 cd infra
-docker-compose up -d --build
+docker compose -f docker-compose.production.yml up -d --build
 ```
-- Выполните миграции, соберите статику, создайте суперпользователя
-```bash
-docker-compose exec backend python manage.py makemigrations
-docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py collectstatic --no-input
-docker-compose exec backend python manage.py createsuperuser
-```
-- Наполните базу данных ингредиентами и тегами
-```bash
-docker-compose exec backend python manage.py load_data
-```
-- или наполните базу тестовыми данными (включают посты и пользователей)
-```bash
-docker-compose exec backend python manage.py loaddata data/data.json 
-```
+- Выполнение миграций, сбор статики, наполнение бд и создание суперпользователя автоматизированы и выполняются в файле entrypoint.sh
 - Стандартная админ-панель Django доступна по адресу [`https://localhost/admin/`](https://localhost/admin/)
-- Документация к проекту доступна по адресу [`https://localhost/api/docs/`](`https://localhost/api/docs/`)
 
 #### Запуск API проекта в dev-режиме
 
@@ -77,11 +62,11 @@ docker-compose exec backend python manage.py loaddata data/data.json
 - Создание виртуального окружения и установка зависимостей
 ```bash
 cd backend
-python -m venv venv
-. venv/Scripts/activate (windows)
-. venv/bin/activate (linux)
+python -m venv .venv (можно просто venv)
+. Source/.venv/Scripts/activate (windows)
+. Source/.venv/bin/activate (linux)
 pip install --upgade pip
-pip install -r -requirements.txt
+pip install -r -requirements
 ```
 - Примените миграции и соберите статику
 ```bash
@@ -91,7 +76,7 @@ python manage.py collectstatic --noinput
 ```
 - Наполнение базы данных ингредиентами и тегами
 ```bash
-python manage.py load_data
+python manage.py import_data
 ```
 - в файле foodgram/setting.py замените БД на встроенную SQLite
 ```python

@@ -7,18 +7,14 @@ while ! nc -z db 5432; do
     echo "wait database"
 done
 
-echo "connected to the database"
-
 python manage.py migrate
-echo "Migrations complete"
-
 python manage.py collectstatic --noinput
-echo "Collectstatic complete"
+python manage.py create_superuser
+python manage.py import_data
 
 mkdir -p /app/backend_static/static
-echo "Created backend_static directory"
 
 cp -r /app/static/. /app/backend_static/static/
-echo "Static files copied to backend_static"
+
 
 exec gunicorn --bind 0.0.0.0:8000 foodgram.wsgi

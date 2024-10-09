@@ -12,7 +12,10 @@ MODELS_FILES = {
 
 
 class Command(BaseCommand):
+    """Класс для автоматического импорта данных."""
+
     def handle(self, *args, **options):
+        """Функция обработчик."""
         for model, file in MODELS_FILES.items():
             with open(
                 f'{settings.BASE_DIR}/data/{file}',
