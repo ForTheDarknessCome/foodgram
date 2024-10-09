@@ -7,6 +7,7 @@ from utils.constants import LENGTH_EMAIL
 
 class User(AbstractUser):
     """Модель пользователя, расширяющая стандартную модель AbstractUser.
+
     Добавляет поле email с уникальным значением.
     """
 
@@ -46,6 +47,7 @@ class User(AbstractUser):
 
 class Follow(models.Model):
     """Модель для хранения подписок пользователей.
+
     Позволяет отслеживать, кто на кого подписан.
     """
 

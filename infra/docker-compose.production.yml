@@ -7,25 +7,25 @@ services:
   db:
     container_name: foodgram-db
     image: postgres:13
-    env_file: ../.env
+    env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
     container_name: foodgram-back
-    build: ../backend/
-    env_file: ../.env
+    image: shido223/foodgram_backend
+    env_file: .env
     volumes:
       - static:/app/backend_static/
       - media:/app/media/
   frontend: 
     container_name: foodgram-front 
-    build: ../frontend 
+    image: shido223/foodgram_frontend
     command: cp -r /app/build/. /static/
     volumes: 
       - static:/static
   nginx: 
     container_name: foodgram-proxy 
-    build: ../nginx/
+    image: shido223/foodgram_nginx
     ports: 
       - "8000:80" 
     volumes: 
