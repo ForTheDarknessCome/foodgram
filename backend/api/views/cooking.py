@@ -26,7 +26,7 @@ from cooking.models import (
     Tag,
     Favorite,
 )
-from utils.filters import RecipeFilter
+from utils.filters import IngredientFilter, RecipeFilter
 from utils.link_shortener import LinkShortener
 from utils.pagination import CustomLimitOffsetPagination
 from utils.permissions import IsAuthorOrReadOnly
@@ -217,4 +217,5 @@ class IngredientViewSet(
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
     filterset_fields = ('name',)
