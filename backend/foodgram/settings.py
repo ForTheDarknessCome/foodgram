@@ -138,3 +138,10 @@ SWAGGER_SETTINGS = {
 DJOSER = {
     "LOGIN_FIELD": "email",
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://f00dgram.ddns.net',
+    'https://f00dgram.ddns.net',
+    'http://89.169.165.185',
+    'https://89.169.165.185'
+]
