@@ -1,6 +1,7 @@
 import csv
 
 from django.core.management import BaseCommand
+from django.db import IntegrityError
 
 from foodgram import settings
 from cooking.models import Ingredient, Tag
@@ -23,9 +24,19 @@ class Command(BaseCommand):
                 encoding='utf-8',
             ) as table:
                 reader = csv.DictReader(table)
-                model.objects.bulk_create(
-                    model(**data) for data in reader
-                )
+                instances = []
+
+                for data in reader:
+                    instances.append(model(**data))
+
+                try:
+                    model.objects.bulk_create(instances)
+                except IntegrityError:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'Некоторые записи для {model.__name__} есть в бд.'
+                        )
+                    )
 
         self.stdout.write(
             self.style.SUCCESS('Ингредиенты и теги загружены')

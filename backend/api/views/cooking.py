@@ -55,12 +55,9 @@ class RecipeGetFullLinkView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, short_key):
-        full_path = link_shortener.restore_url(short_key)
-        if full_path and full_path != 'URL не найден':
-            domain = request.build_absolute_uri('/')[:-1]
-            full_url = f'{domain}{full_path}'
+        full_url = link_shortener.restore_url(short_key)
+        if full_url != 'URL не найден':
             return redirect(full_url)
-
         return Response(
             {'error': 'URL не найден'}, status=status.HTTP_404_NOT_FOUND
         )
