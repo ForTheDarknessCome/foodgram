@@ -165,11 +165,10 @@ class FollowView(generics.CreateAPIView, generics.DestroyAPIView):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, *args, **kwargs):
-        following_user = self.get_following_user()
+    def delete(self, request, following_id, *args, **kwargs):
 
         deleted_count, _ = Follow.objects.filter(
-            user=request.user, following=following_user
+            user=request.user, following=following_id
         ).delete()
 
         if deleted_count > 0:
