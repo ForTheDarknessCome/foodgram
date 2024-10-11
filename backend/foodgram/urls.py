@@ -13,7 +13,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     re_path(
-        r'^s/([a-f0-9]{3})/$',
+        r'^s/([a-f0-9]{6})/$',
         RecipeGetFullLinkView.as_view(),
         name='full-link',
     ),

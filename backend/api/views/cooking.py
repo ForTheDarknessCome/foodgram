@@ -1,6 +1,6 @@
 from django.db.models import Exists, OuterRef, Value, BooleanField
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
@@ -42,8 +42,11 @@ class RecipeGetShortLinkView(APIView):
 
     def get(self, request, id):
         full_link = f'/api/recipes/{id}/'
-        short_link = link_shortener.shorten_url(full_link)
-        return Response({'short-link': short_link}, status=status.HTTP_200_OK)
+        short_key = link_shortener.shorten_url(full_link)
+        domain = request.build_absolute_uri('/')[:-1]
+        short_url = f'{domain}/s/{short_key}'
+
+        return Response({'short-link': short_url}, status=status.HTTP_200_OK)
 
 
 class RecipeGetFullLinkView(APIView):
@@ -51,10 +54,13 @@ class RecipeGetFullLinkView(APIView):
 
     permission_classes = (AllowAny,)
 
-    def get(self, request, short_code):
-        full_url = link_shortener.restore_url(f's/{short_code}')
-        if full_url:
-            return Response({'full_url': full_url}, status=status.HTTP_200_OK)
+    def get(self, request, short_key):
+        full_path = link_shortener.restore_url(short_key)
+        if full_path and full_path != 'URL не найден':
+            domain = request.build_absolute_uri('/')[:-1]
+            full_url = f'{domain}{full_path}'
+            return redirect(full_url)
+
         return Response(
             {'error': 'URL не найден'}, status=status.HTTP_404_NOT_FOUND
         )
