@@ -21,9 +21,3 @@ LENGTH_INGREDIENT_NAME = 128
 
 MEASUREMENT_UNIT_LENGTH = 15
 """Максимальная длина единицы измерения."""
-
-DEFAULT_PAGINATION_LIMIT = 6
-"""Параметр пагинации страниц."""
-
-PAGE_SIZE = 6
-"""Количество объектов на странице."""
