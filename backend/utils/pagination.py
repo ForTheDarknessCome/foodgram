@@ -8,3 +8,4 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
 
     default_limit = DEFAULT_PAGINATION_LIMIT
     page_size = PAGE_SIZE
+    page_size_query_param = 'limit'
