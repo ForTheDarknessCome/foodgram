@@ -41,7 +41,7 @@ class RecipeGetShortLinkView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, id):
-        full_link = f'/api/recipes/{id}/'
+        full_link = f'/recipes/{id}/'
         short_key = link_shortener.shorten_url(full_link)
         domain = request.build_absolute_uri('/')[:-1]
         short_url = f'{domain}/s/{short_key}'
