@@ -24,3 +24,6 @@ MEASUREMENT_UNIT_LENGTH = 15
 
 DEFAULT_PAGINATION_LIMIT = 6
 """Параметр пагинации страниц."""
+
+PAGE_SIZE = 6
+"""Количество объектов на странице."""
