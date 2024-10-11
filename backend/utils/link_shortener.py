@@ -4,8 +4,13 @@ import hashlib
 class LinkShortener:
     """Класс для реализации метода сокращения ссылок, использующий hash."""
 
-    def __init__(self) -> None:
-        self.url_mapping: dict[str, str] = {}
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+            cls._instance.url_mapping = {}
+        return cls._instance
 
     def shorten_url(self, full_url: str) -> str:
         """Создание короткого URL на основе хеширования полного URL."""
