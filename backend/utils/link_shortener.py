@@ -8,15 +8,13 @@ class LinkShortener:
     def shorten_url(self, full_url: str) -> str:
         """Создание короткого URL на основе хеширования полного URL."""
         short_key = hashlib.md5(full_url.encode()).hexdigest()[:6]
-        ShortenedURL.objects.create(full_url=full_url, short_key=short_key)
-        return short_key
+        short_link, _ = ShortenedURL.objects.get_or_create(
+            full_url=full_url, defaults={'short_key': short_key}
+        )
+        return short_link.short_key
 
     def restore_url(self, short_key: str) -> str:
-        url_entry = (
-            ShortenedURL.objects.filter(short_key=short_key)
-            .values('full_url')
-            .first()
-        )
-        if url_entry:
-            return url_entry['full_url']
-        return 'URL не найден'
+        try:
+            return ShortenedURL.objects.get(short_key=short_key).full_url
+        except ShortenedURL.DoesNotExist:
+            return 'URL не найден'

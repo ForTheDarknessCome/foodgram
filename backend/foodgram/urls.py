@@ -12,10 +12,8 @@ from api.views.cooking import RecipeGetFullLinkView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    re_path(
-        r'^s/([a-f0-9]{6})/$',
-        RecipeGetFullLinkView.as_view(),
-        name='full-link',
+    path(
+        's/<str:short_key>/', RecipeGetFullLinkView.as_view(), name='full-link'
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
