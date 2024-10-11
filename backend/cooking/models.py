@@ -209,3 +209,11 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.recipe} в корзине у пользователя {self.user}'
+
+
+class ShortenedURL(models.Model):
+    """Модель для хранения коротких ссылок рецептов."""
+
+    full_url = models.URLField()
+    short_key = models.CharField(max_length=6, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
