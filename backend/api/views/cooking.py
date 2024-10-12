@@ -28,7 +28,7 @@ from cooking.models import (
 )
 from utils.filters import IngredientFilter, RecipeFilter
 from utils.link_shortener import LinkShortener
-from utils.pagination import CustomLimitOffsetPagination
+from utils.pagination import CustomPageNumberPagination
 from utils.permissions import IsAuthorOrReadOnly
 
 
@@ -69,7 +69,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorOrReadOnly,)
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter)
-    pagination_class = CustomLimitOffsetPagination
+    pagination_class = CustomPageNumberPagination
     filterset_fields = (
         'tags__slug',
         'author',

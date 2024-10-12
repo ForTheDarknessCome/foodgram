@@ -17,7 +17,7 @@ from api.serializers.account import (
     FollowersSerializer,
     UserSerializer,
 )
-from utils.pagination import CustomLimitOffsetPagination
+from utils.pagination import CustomPageNumberPagination
 from utils.permissions import CurrentUserAdminOrReadOnly
 
 
@@ -35,7 +35,7 @@ class UserViewSet(
     serializer_class = UserSerializer
     queryset = User.objects.all()
     permission_classes = (CurrentUserAdminOrReadOnly,)
-    pagination_class = CustomLimitOffsetPagination
+    pagination_class = CustomPageNumberPagination
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -102,7 +102,7 @@ class FollowersList(generics.ListAPIView):
     """Дженерик для отображения списка подписок."""
 
     serializer_class = FollowersSerializer
-    pagination_class = CustomLimitOffsetPagination
+    pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
         user = self.request.user
