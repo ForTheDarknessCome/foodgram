@@ -6,17 +6,17 @@ from account.models import Follow, User
 
 
 class UserFilter(AutocompleteFilter):
-    """Фильтр для поля `user__username`."""
+    """Фильтр для поля `user`."""
 
     title = 'Подписчик'
-    field_name = 'user__username'
+    field_name = 'user'
 
 
 class FollowingFilter(AutocompleteFilter):
-    """Фильтр для поля `following__username`."""
+    """Фильтр для поля `following`."""
 
     title = 'Подписант'
-    field_name = 'following__username'
+    field_name = 'following'
 
 
 @admin.register(User)
