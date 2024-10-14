@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'account',
     'cooking',
     'api',
-    'autocompletefilter',
+    'admin_auto_filters',
 ]
 
 MIDDLEWARE = [

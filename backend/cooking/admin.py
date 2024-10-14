@@ -14,6 +14,20 @@ from cooking.models import (
 )
 
 
+class AuthorFilter(AutocompleteFilter):
+    """Фильтр для поля `author`."""
+
+    title = 'Author'
+    field_name = 'author'
+
+
+class TagsFilter(AutocompleteFilter):
+    """Фильтр для поля `tags`."""
+
+    title = 'Tags'
+    field_name = 'tags'
+
+
 class RecipeIngredientInline(admin.TabularInline):
     """Inline для редактирования ингредиентов рецепта в админке."""
 
@@ -52,9 +66,9 @@ class RecipeAdmin(admin.ModelAdmin):
         'pub_date',
         'display_image',
     )
-    list_filter = ( 
-        (AutocompleteFilter, 'author'),
-        (AutocompleteFilter, 'tags'),
+    list_filter = (
+        AuthorFilter,
+        TagsFilter,
     )
     search_fields = ('name', 'author__username')
     inlines = [RecipeIngredientInline]

@@ -5,6 +5,20 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from account.models import Follow, User
 
 
+class UserFilter(AutocompleteFilter):
+    """Фильтр для поля `user__username`."""
+
+    title = 'Подписчик'
+    field_name = 'user__username'
+
+
+class FollowingFilter(AutocompleteFilter):
+    """Фильтр для поля `following__username`."""
+
+    title = 'Подписант'
+    field_name = 'following__username'
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Админка для управления моделью User.
@@ -66,6 +80,6 @@ class FollowAdmin(admin.ModelAdmin):
     list_display = ('user', 'following')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
     list_filter = (
-        (AutocompleteFilter, 'user__username'),
-        (AutocompleteFilter, 'following__username'),
+        UserFilter,
+        FollowingFilter,
     )
