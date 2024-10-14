@@ -1,3 +1,4 @@
+from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -64,4 +65,7 @@ class FollowAdmin(admin.ModelAdmin):
 
     list_display = ('user', 'following')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
-    list_filter = ('user__username', 'following__username')
+    list_filter = (
+        (AutocompleteFilter, 'user__username'),
+        (AutocompleteFilter, 'following__username'),
+    )

@@ -1,5 +1,6 @@
 import base64
 
+from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin
 from django.utils.html import mark_safe
 
@@ -29,6 +30,7 @@ class TagAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
+    search_fields = ('name',)
 
 
 @admin.register(Ingredient)
@@ -50,7 +52,10 @@ class RecipeAdmin(admin.ModelAdmin):
         'pub_date',
         'display_image',
     )
-    list_filter = ('author', 'tags')
+    list_filter = ( 
+        (AutocompleteFilter, 'author'),
+        (AutocompleteFilter, 'tags'),
+    )
     search_fields = ('name', 'author__username')
     inlines = [RecipeIngredientInline]
     filter_horizontal = ('tags',)
