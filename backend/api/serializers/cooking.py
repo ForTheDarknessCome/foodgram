@@ -16,6 +16,7 @@ from utils.fields import Base64ImageField
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для ингредиентов."""
 
     class Meta:
         model = Ingredient
@@ -48,6 +49,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class AddIngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для добавления существующих ингредиентов в рецепт.
+
     Используется для определения поля ingredients в RecipeSerializer.
     """
 
@@ -141,7 +143,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Возвращает пользователю полный экземпляр рецепта."""
-
         return GetRecipeSerializer(instance, context=self.context).data
 
 

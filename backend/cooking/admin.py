@@ -27,7 +27,6 @@ class RecipeIngredientInline(admin.TabularInline):
 class TagAdmin(admin.ModelAdmin):
     """Админка для управления тегами рецептов."""
 
-    model = Tag
     list_display = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
@@ -44,7 +43,6 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для управления рецептами."""
 
-    model = Recipe
     list_display = (
         'name',
         'author',

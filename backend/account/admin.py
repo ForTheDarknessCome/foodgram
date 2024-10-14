@@ -11,9 +11,7 @@ class UserAdmin(BaseUserAdmin):
     Используется для отображения и редактирования данных пользователей.
     """
 
-    model = User
     list_display = ('username', 'email', 'is_staff', 'is_active')
-    list_editable = ('is_active',)
     list_filter = ('is_staff', 'is_active')
     search_fields = ('username', 'first_name', 'last_name', 'email')
     ordering = ('username',)
@@ -64,6 +62,6 @@ class FollowAdmin(admin.ModelAdmin):
     Используется для отображения и изменения подписок.
     """
 
-    model = Follow
     list_display = ('user', 'following')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    list_filter = ('user__username', 'following__username')

@@ -120,10 +120,10 @@ class FollowersSerializer(serializers.ModelSerializer):
         )
 
     def get_avatar(self, obj):
-        following_user = obj.following
-        if hasattr(following_user, 'avatar') and following_user.avatar:
-            return following_user.avatar.get_photo_url()
-        return None
+        try:
+            return obj.following.avatar.get_photo_url()
+        except AttributeError:
+            return None
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
@@ -144,6 +144,7 @@ class FollowersSerializer(serializers.ModelSerializer):
 
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор для создания подписки.
+
     Возвращает данные о пользователе, на которого подписались.
     """
 

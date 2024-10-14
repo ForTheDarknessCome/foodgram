@@ -10,7 +10,6 @@ done
 python manage.py migrate
 python manage.py collectstatic --noinput
 python manage.py create_superuser
-python manage.py import_data
 
 mkdir -p /app/backend_static/static
 

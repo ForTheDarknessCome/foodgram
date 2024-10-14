@@ -17,10 +17,14 @@ class User(AbstractUser):
     first_name = models.CharField(
         verbose_name='Имя',
         max_length=150,
+        blank=False,
+        null=False
     )
     last_name = models.CharField(
         verbose_name='Фамилия',
         max_length=150,
+        blank=False,
+        null=False,
     )
     avatar = models.ImageField(
         'Аватар', upload_to='users/', null=True, default=None
